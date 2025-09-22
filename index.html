@@ -102,6 +102,11 @@
             if (idToken && idToken.email) {
               document.getElementById("email").defaultValue = idToken.email;
             }
+            liff.permission.query("profile").then((permissionStatus) => {
+              if (permissionStatus.state === "prompt") {
+                liff.permission.requestAll();
+              }
+            });
           })
           .catch((err) => {
             // LIFF initialization failed
