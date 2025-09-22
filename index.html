@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <style type="text/css">
+      html,
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+          Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f3e8ff; /* ページ全体の背景色 */
+      }
+      .home {
+        padding: 0 1rem;
+        text-align: center;
+      }
+      .home__header {
+        background-color: #7c3aed;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        margin-bottom: 2rem;
+        padding: 1.5rem 0; /* 下の余白を広げる */
+        text-align: center;
+      }
+      .home__title {
+        font-size: 2rem; /* 2.5rem → 2remに変更 */
+        line-height: 1.15;
+        color: #fff;
+        margin: 0;
+        background: none;
+        border-radius: 0;
+        padding: 0;
+        display: inline;
+      }
+      .user-id {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 1.5rem;
+      }
+      .form-button {
+        background-color: #00b900;
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+        width: 100%;
+        margin-top: 1rem;
+      }
+      .form-button:hover {
+        background-color: #009300;
+      }
+      @media screen and (max-width: 600px) {
+        html {
+          font-size: 14px;
+        }
+        .home__title {
+          font-size: 1.5rem; /* スマホ時はさらに小さく */
+        }
+      }
+      input {
+        font-size: 16px;
+      }
+      .form-field {
+        margin-bottom: 1rem;
+        text-align: left; /* 各設問項目を左寄せ */
+      }
+      .form-field label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+        text-align: left; /* ラベルも左寄せ */
+      }
+      .form-button,
+      #name,
+      #email,
+      #inquery {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 1rem;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+      }
+    </style>
+    <title>Honde Nextへのお問い合わせ</title>
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <script>
+      function initializeLiff(myLiffId) {
+        liff
+          .init({
+            liffId: myLiffId, // Use own liffId
+            withLoginOnExternalBrowser: true, // Enable automatic login process
+          })
+          .then(() => {
+            const idToken = liff.getDecodedIDToken();
+            if (idToken && idToken.email) {
+              document.getElementById("email").defaultValue = idToken.email;
+            }
+          })
+          .catch((err) => {
+            // LIFF initialization failed
+            console.error("LIFF initialization failed", err);
+          });
+      }
+
+      function sendMessage() {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const inqueryType = document.querySelectorAll('input[name="type"]:checked')[0]
+          ? document.querySelectorAll('input[name="type"]:checked')[0].value
+          : "";
+        const inquery = document.getElementById("inquery").value;
+
+        const message = `◆登録情報\nお問い合わせ種別: ${inqueryType}\n氏名: ${name}\nメールアドレス: ${email}\nお問い合わせの内容: ${inquery}`;
+
+        // 入力内容を確認
+        const confirmMsg = `以下の内容で送信します。\n\n${message}\n\nよろしいですか？`;
+        if (!window.confirm(confirmMsg)) {
+          return; // キャンセルされた場合は送信しない
+        }
+        const accessToken = liff.getAccessToken();
+        const postData= {
+          accessToken: accessToken,
+          name: name,
+          email: email,
+          inqueryType: inqueryType,
+          inquery: inquery
+        };
+        fetch("https://default99ea0543b51849ccaaefc9edd8db02.01.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/67dc7f549b5242cc9c5dd8b4f7ece710/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=KXSriJqFNX7FtxwHcYzUoutqspHDEDMqrtkSKDwYAbI", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(postData),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            alert("お問い合わせを送信しました。ありがとうございます！");
+            // フォームをリセット
+            document.querySelector("form").reset();
+            liff.closeWindow();
+          })
+          .catch((error) => {
+            console.error("There was a problem with the fetch operation:", error);
+            alert("送信中にエラーが発生しました。もう一度お試しください。");
+          });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const myLiffId = "2006661248-zl3g0yE1"; // ここにあなたのLIFF IDを入力してください
+        initializeLiff(myLiffId);
+
+        document
+          .querySelector("form")
+          .addEventListener("submit", function (event) {
+            event.preventDefault();
+            sendMessage();
+          });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="home">
+      <div class="home__header">
+      <h1 class="home__title">Honde Nextへのお問い合わせ</h1>
+    </div>
+      <div>
+        <form>
+            <div class="form-field">
+              <label>お問い合わせ種別 <span style="color:red;">※必須</span></label>
+              <div style="text-align:left;">
+                <label style="display:flex; align-items:center; gap:0.5em; justify-content: flex-start;">
+                  <input type="radio" name="type" value="ソリューション・サービスに関するご相談" required />
+                  <span>ソリューション・サービスに関するご相談</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:0.5em; justify-content: flex-start;">
+                  <input type="radio" name="type" value="貴社製品・サービスのご提案" required />
+                  <span>貴社製品・サービスのご提案</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:0.5em; justify-content: flex-start;">
+                  <input type="radio" name="type" value="その他お問合せ（取材、講演もこちら）" required />
+                  <span>その他お問合せ（取材、講演もこちら）</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="name">氏名 <span style="color:red;">※必須</span></label>
+              <input type="text" id="name" name="name" required style="width:100%; font-size:1rem; border-radius:5px; border:1px solid #ccc; padding:0.5rem;" />
+            </div>
+            <div class="form-field">
+              <label for="email">メールアドレス <span style="color:red;">※必須</span></label>
+              <input type="email" id="email" name="email" required style="width:100%; font-size:1rem; border-radius:5px; border:1px solid #ccc; padding:0.5rem;" />
+            </div>
+            <div class="form-field">
+              <label for="inquery">お問い合わせの内容 <span style="color:red;">※必須</span></label>
+              <textarea id="inquery" name="inquery" rows="5" required style="width:100%; font-size:1rem; border-radius:5px; border:1px solid #ccc; padding:0.5rem;"></textarea>
+            </div>
+            <button type="submit" class="form-button">確認する</button>
+            <div style="margin-top: 1rem;">
+              <a href="https://www.notion.so/hondenext/8d213c1783054a3bb33eed4bbc6caf9c" target="_blank" style="color: #7c3aed; text-decoration: underline;">
+                個人情報のお取り扱いについて。
+              </a>
+            </div>
+          </form>
+    </div>
+  </body>
+</html>
